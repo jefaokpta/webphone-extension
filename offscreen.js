@@ -28,9 +28,13 @@ async function startUA() {
     ua.on('newRTCSession', (ev) => {
         session = ev.session;
         logger(`Nova sessão ${ev.originator}`);
-
-        // Attach remote audio for both outgoing and incoming
-        tryAttachAudio(session);
+        if (ev.originator === 'local') {
+            tryAttachAudio(session);
+        } else {
+            session.on('peerconnection', (ev2) => {
+                tryAttachAudio(session)
+            })
+        }
 
         session.on('ended', () => {
             logger('Sessão finalizada.');
@@ -90,11 +94,9 @@ function answer() {
 }
 
 function tryAttachAudio(session) {
-    const audioEl = document.getElementById('remoteAudio');
-    if (!audioEl) return;
+    const audioEl = new Audio();
     // In newer browsers, 'track' is used; JsSIP still fires 'addstream' for compat
     const conn = session.connection;
-    if (!conn) return;
 
     const attach = (stream) => {
         logger('Anexando stream remoto ao <audio>');
@@ -110,16 +112,16 @@ function tryAttachAudio(session) {
 
     // Legacy event
     conn.addEventListener('addstream', (ev) => {
-        logger('Evento addstream');
         attach(ev.stream);
+        logger('audio conectado')
     });
     // Modern event
-    conn.addEventListener('track', (ev) => {
-        if (ev?.streams[0]) {
-            logger('Evento track (modern) ' + ev.streams[0].id);
-            attach(ev.streams[0]);
-        }
-    });
+    // conn.addEventListener('track', (ev) => {
+    //     if (ev?.streams[0]) {
+    //         logger('Evento track (modern) ' + ev.streams[0].id);
+    //         attach(ev.streams[0]);
+    //     }
+    // });
 }
 
 async function getCallToken(token) {
