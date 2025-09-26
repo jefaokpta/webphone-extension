@@ -5,6 +5,8 @@ let session = null;      // Current JsSIP.RTCSession
 
 function logger(msg) {
     console.log(`[OFFSCREEN] ${new Date().toLocaleString()} `, msg)
+    chrome.runtime.sendMessage({type: 'status', message: msg}).catch(() => {
+    });
 }
 
 async function startUA() {
@@ -35,7 +37,7 @@ async function startUA() {
             session = null;
         });
         session.on('failed', (e) => {
-            logger('Sessão falhou:', e?.cause);
+            logger('Sessão falhou: ' + (e?.cause || 'desconhecida'));
             session = null;
         });
         session.on('accepted', () => logger('Sessão aceita.'));
@@ -48,6 +50,7 @@ async function startUA() {
 startUA();
 
 async function dial(phoneNumber) {
+    logger('Autenticando...')
     const callToken = await getCallToken(credentials.token);
     const sipCall = `sip:${phoneNumber}@${credentials.domain}`;
     logger(`Chamando ${sipCall}`);
@@ -100,8 +103,8 @@ function tryAttachAudio(session) {
     });
     // Modern event
     conn.addEventListener('track', (ev) => {
-        if (ev.streams && ev.streams[0]) {
-            logger('Evento track');
+        if (ev?.streams[0]) {
+            logger('Evento track (modern) ' + ev.streams[0].id);
             attach(ev.streams[0]);
         }
     });
@@ -124,7 +127,17 @@ async function getCallToken(token) {
     }
 }
 
-chrome.runtime.onMessage.addListener((message) => {
-    logger(`Mensagem recebida: ${JSON.stringify(message)}`);
-
+chrome.runtime.onMessage.addListener(async (message) => {
+    switch (message.type) {
+        case 'dial':
+            dial(message.phoneNumber);
+            break;
+        case 'hangup':
+            hangup()
+            break
+        case 'wakeup':
+            break
+        default:
+            logger(`Mensagem desconhecida: ${JSON.stringify(message)}`);
+    }
 })
