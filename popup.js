@@ -9,6 +9,16 @@ function logger(msg) {
     console.log(`[POPUP] ${new Date()} `, msg)
 }
 
+document.addEventListener("DOMContentLoaded", checkMicrophonePermission);
+
+async function checkMicrophonePermission() {
+    try {
+        await navigator.mediaDevices.getUserMedia({audio: true});
+    } catch (_) {
+        chrome.tabs.create({url: "permission.html"});
+    }
+}
+
 callBtn.addEventListener('click', async () => {
     const number = (phoneInput.value || '').trim();
     if (!number) {

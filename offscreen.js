@@ -7,7 +7,7 @@ function logger(msg) {
     console.log(`[OFFSCREEN] ${new Date().toLocaleString()} `, msg)
 }
 
-function startUA() {
+async function startUA() {
     const socket = new JsSIP.WebSocketInterface(`wss://${credentials.domain}:${credentials.port}/ws`);
     const configuration = {
         sockets: [socket],
@@ -46,6 +46,33 @@ function startUA() {
 }
 
 startUA();
+
+async function dial(phoneNumber) {
+    const callToken = await getCallToken(credentials.token);
+    const sipCall = `sip:${phoneNumber}@${credentials.domain}`;
+    logger(`Chamando ${sipCall}`);
+    const options = {
+        mediaConstraints: {audio: true, video: false},
+        extraHeaders: callToken ? ['X-CALL-TOKEN: ' + callToken] : []
+    };
+    try {
+        ua.call(sipCall, options);
+    } catch (e) {
+        logger(`Erro ao iniciar chamada: ${e?.message || e}`);
+    }
+}
+
+function hangup() {
+    if (!session) {
+        logger('Nenhuma sessão ativa para finalizar chamada.');
+        return;
+    }
+    try {
+        session.terminate();
+    } catch (e) {
+        logger(`Erro ao finalizar chamada: ${e?.message || e}`);
+    }
+}
 
 function tryAttachAudio(session) {
     const audioEl = document.getElementById('remoteAudio');
@@ -101,11 +128,3 @@ chrome.runtime.onMessage.addListener((message) => {
     logger(`Mensagem recebida: ${JSON.stringify(message)}`);
 
 })
-
-function keepAlive() {
-    setInterval(() => {
-        logger('Mantendo conexão ativa');
-    }, 10000);
-}
-
-keepAlive();

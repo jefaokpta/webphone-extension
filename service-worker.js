@@ -27,9 +27,4 @@ chrome.runtime.onStartup?.addListener(() => {
     ensureOffscreenDocument();
 });
 
-// manter o offscreen document sempre ativo
-setInterval(() => {
-    chrome.runtime.sendMessage({type: 'keepAlive'});
-}, 5000); // a cada ~25s
-
 
