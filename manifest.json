@@ -12,9 +12,9 @@
   "action": {
     "default_title": "Ramal Vip",
     "default_popup": "popup.html"
-  },
-  "background": {
-    "service_worker": "service-worker.js",
-    "type": "module"
   }
+  //  "background": {
+  //    "service_worker": "service-worker.js",
+  //    "type": "module"
+  //  }
 }
