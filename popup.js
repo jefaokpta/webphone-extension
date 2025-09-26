@@ -18,7 +18,7 @@ async function checkMicrophonePermission() {
     try {
         await navigator.mediaDevices.getUserMedia({audio: true});
         chrome.runtime.sendMessage({type: 'wakeup'});
-    } catch () {
+    } catch (_) {
         chrome.tabs.create({url: "permission.html"});
     }
 }

@@ -77,6 +77,18 @@ function hangup() {
     }
 }
 
+function answer() {
+    if (!session) {
+        logger('Nenhuma sessão ativa para atender chamada.');
+        return;
+    }
+    try {
+        session.answer();
+    } catch (e) {
+        logger(`Erro ao atender chamada: ${e?.message || e}`);
+    }
+}
+
 function tryAttachAudio(session) {
     const audioEl = document.getElementById('remoteAudio');
     if (!audioEl) return;
@@ -132,11 +144,14 @@ chrome.runtime.onMessage.addListener(async (message) => {
         case 'dial':
             dial(message.phoneNumber);
             break;
+        case 'answer':
+            answer();
+            break;
         case 'hangup':
-            hangup()
-            break
+            hangup();
+            break;
         case 'wakeup':
-            break
+            break;
         default:
             logger(`Mensagem desconhecida: ${JSON.stringify(message)}`);
     }
