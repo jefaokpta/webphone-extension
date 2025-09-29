@@ -5,6 +5,7 @@ const jwtEl = document.getElementById('jwt');
 const saveBtn = document.getElementById('saveBtn');
 const clearBtn = document.getElementById('clearBtn');
 const statusEl = document.getElementById('status');
+const incomingToggle = document.getElementById('incomingCalls');
 
 function showStatus(text, isError = false) {
     statusEl.textContent = text;
@@ -13,20 +14,21 @@ function showStatus(text, isError = false) {
     if (text) setTimeout(() => (statusEl.textContent = ''), 2500);
 }
 
-async function loadJwt() {
+async function loadSettings() {
     try {
-        const {jwt} = await chrome.storage.sync.get(['jwt']);
+        const {jwt, incomingCalls} = await chrome.storage.sync.get(['jwt', 'incomingCalls']);
         if (jwt) jwtEl.value = jwt;
+        incomingToggle.checked = Boolean(incomingCalls);
     } catch (e) {
-        console.warn('Falha ao carregar JWT do storage:', e);
+        console.warn('Falha ao carregar configurações do storage:', e);
     }
 }
 
 async function saveJwt() {
     const value = (jwtEl.value || '').trim();
     try {
-        await chrome.storage.sync.set({jwt: value});
-        showStatus('JWT Salvo!');
+        await chrome.storage.sync.set({jwt: value, incomingCalls: incomingToggle.checked});
+        showStatus('Opções salvas!');
     } catch (e) {
         showStatus('Erro ao salvar', true);
     }
@@ -45,4 +47,4 @@ async function clearJwt() {
 saveBtn.addEventListener('click', saveJwt);
 clearBtn.addEventListener('click', clearJwt);
 
-document.addEventListener('DOMContentLoaded', loadJwt);
+document.addEventListener('DOMContentLoaded', loadSettings);

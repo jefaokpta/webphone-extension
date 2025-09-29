@@ -1,7 +1,7 @@
 
 let ua = null;           // JsSIP.UA
 let session = null;      // Current JsSIP.RTCSession
-const isRegister = false;
+let isRegister = false;
 let token = null;
 let credential = null;
 
@@ -12,7 +12,7 @@ function logger(msg) {
 }
 
 function startUA() {
-    logger('Iniciando JsSIP... Registrar: ' + isRegister)
+    logger('Iniciando Webphone... Registrar: ' + isRegister)
     const socket = new JsSIP.WebSocketInterface(`wss://${credential.domain}:${credential.port}/ws`);
     const configuration = {
         sockets: [socket],
@@ -54,13 +54,16 @@ function startUA() {
     ua.start();
 }
 
-startByJwt()
+loadOptions()
 
-//TODO: ativar heartbeat/register caso esteja configurado pra receber chamadas
 // Heartbeat: envia ping periódico para manter o SW ativo e permitir recriação do offscreen se cair
-if (isRegister) {
-    const HEARTBEAT_INTERVAL_MS = 20000; // 20s
-    setInterval(() => {
+const HEARTBEAT_INTERVAL_MS = 20000; // 20s
+let heartbeatIntervalId = null;
+
+function startHeartbeatIfNeeded() {
+    if (!isRegister) return;
+    if (heartbeatIntervalId) return;
+    heartbeatIntervalId = setInterval(() => {
         chrome.runtime.sendMessage({type: 'heartbeat', ts: Date.now()}).catch(() => {
         });
     }, HEARTBEAT_INTERVAL_MS);
@@ -150,8 +153,8 @@ async function getCallToken() {
     }
 }
 
-function startByJwt() {
-    chrome.runtime.sendMessage({type: "jwt"})
+function loadOptions() {
+    chrome.runtime.sendMessage({type: "options"})
 }
 
 function extractJwt(token) {
@@ -175,10 +178,12 @@ chrome.runtime.onMessage.addListener(async (message) => {
             break;
         case 'wakeup':
             break;
-        case 'jwt-response':
-            token = message.jwt;
+        case 'options-response':
+            token = message.options.jwt;
             credential = extractJwt(token);
+            isRegister = message.options.incomingCalls;
             startUA();
+            startHeartbeatIfNeeded();
             break;
         default:
             logger(`Mensagem desconhecida: ${JSON.stringify(message)}`);

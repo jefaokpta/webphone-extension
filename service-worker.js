@@ -37,9 +37,9 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     await ensureOffscreenDocument();
     if (message.type === 'wakeup') logger(`Recebida: ${JSON.stringify(message)}`);
     if (message.type === 'heartbeat') armHeartbeat();
-    if (message.type === 'jwt') {
-        const {jwt} = await chrome.storage.sync.get(['jwt']);
-        chrome.runtime.sendMessage({type: 'jwt-response', jwt});
+    if (message.type === 'options') {
+        const options = await chrome.storage.sync.get(['jwt', 'incomingCalls']);
+        chrome.runtime.sendMessage({type: 'options-response', options});
     }
 })
 
