@@ -31,7 +31,7 @@ async function startUA() {
         if (ev.originator === 'local') {
             tryAttachAudio(session);
         } else {
-            session.on('peerconnection', (ev2) => {
+            session.on('peerconnection', () => {
                 tryAttachAudio(session)
             })
         }
@@ -52,6 +52,13 @@ async function startUA() {
 }
 
 startUA();
+
+// Heartbeat: envia ping periódico para manter o SW ativo e permitir recriação do offscreen se cair
+const HEARTBEAT_INTERVAL_MS = 20000; // 20s
+setInterval(() => {
+    chrome.runtime.sendMessage({type: 'heartbeat', ts: Date.now()}).catch(() => {
+    });
+}, HEARTBEAT_INTERVAL_MS);
 
 async function dial(phoneNumber) {
     logger('Autenticando...')
@@ -100,14 +107,10 @@ function tryAttachAudio(session) {
 
     const attach = (stream) => {
         logger('Anexando stream remoto ao <audio>');
-        try {
-            audioEl.srcObject = stream;
-            // Ensure autoplay without user gesture in extension context
-            audioEl.muted = false;
-            audioEl.play().catch(err => logger(`Falha ao reproduzir áudio remoto: ${err?.message || err}`));
-        } catch (e) {
-            logger(`Erro ao anexar áudio: ${e.message}`);
-        }
+        audioEl.srcObject = stream;
+        // Ensure autoplay without user gesture in extension context
+        audioEl.muted = false;
+        audioEl.play().catch(err => logger(`Falha ao reproduzir áudio remoto: ${err?.message || err}`));
     };
 
     // Legacy event

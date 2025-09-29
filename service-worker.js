@@ -33,7 +33,22 @@ chrome.runtime.onStartup?.addListener(() => {
 chrome.runtime.onMessage.addListener(async (message) => {
     // toda vez q popup abre e envia a mensagem 'wakeup' para o service worker criar o offscreen document e ficar pronto para receber comandos
     await ensureOffscreenDocument();
-    if (message.type === 'wakeup') logger(`Mensagem recebida: ${JSON.stringify(message)}`);
-
+    armHeartbeat();
+    if (message.type === 'wakeup') logger(`Recebida: ${JSON.stringify(message)}`);
+    if (message.type === 'heartbeat') logger(`Recebida: ${JSON.stringify(message)}`);
 })
+
+// Heartbeat watchdog: se não receber ping do offscreen por X segundos, recria o offscreen.
+const HEARTBEAT_TTL_MS = 20000; // 30s
+let heartbeatTimer = null;
+
+function armHeartbeat() {
+    if (heartbeatTimer) clearTimeout(heartbeatTimer);
+    heartbeatTimer = setTimeout(async () => {
+        logger('Heartbeat perdido. Tentando recriar offscreen...');
+        await ensureOffscreenDocument();
+        // Rearma para o próximo ciclo
+        armHeartbeat();
+    }, HEARTBEAT_TTL_MS + 2000); // pequena margem
+}
 
