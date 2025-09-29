@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Configurações do Ramal Vip</title>
+    <link rel="stylesheet" href="css/bootstrap-5.3.8-dist/css/bootstrap.min.css">
+    <style>
+        body {
+            padding: 24px;
+        }
+
+        .token-input {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1 class="h4 mb-3">Configurações</h1>
+
+    <div class="mb-3">
+        <label for="jwt" class="form-label">Token JWT</label>
+        <textarea id="jwt" class="form-control token-input" rows="4"
+                  placeholder="Cole aqui seu token JWT..."></textarea>
+        <div class="form-text">Este token é usado para autenticar suas chamadas. Ele será sincronizado entre seus
+            navegadores caso esteja logado na sua conta Google .
+        </div>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button id="saveBtn" class="btn btn-primary">Salvar</button>
+        <button id="clearBtn" class="btn btn-outline-secondary">Limpar</button>
+        <span id="status" class="align-self-center text-success"></span>
+    </div>
+
+    <hr class="my-4"/>
+    <p class="text-muted small mb-0">Dica: após salvar, você já pode usar o popup da extensão para realizar
+        chamadas.</p>
+</div>
+
+<script src="options.js"></script>
+</body>
+</html>

@@ -52,6 +52,8 @@ async function startUA() {
     ua.start();
 }
 
+document.addEventListener("DOMContentLoaded", getStoredJwt);
+logger('Iniciando JsSIP... Registrar: ' + isRegister)
 startUA();
 //TODO: ativar heartbeat/register caso esteja configurado pra receber chamadas
 // Heartbeat: envia ping periódico para manter o SW ativo e permitir recriação do offscreen se cair
@@ -61,6 +63,13 @@ if (isRegister) {
         chrome.runtime.sendMessage({type: 'heartbeat', ts: Date.now()}).catch(() => {
         });
     }, HEARTBEAT_INTERVAL_MS);
+}
+
+async function getStoredJwt() {
+    setTimeout(async () => {
+        const {jwt} = await chrome.storage.sync.get(['jwt']);
+        logger('Carregando JWT ' + jwt)
+    }, 5000)
 }
 
 async function dial(phoneNumber) {
