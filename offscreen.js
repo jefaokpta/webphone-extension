@@ -2,6 +2,7 @@ const BACKEND_URL = credentials.pabxUrl;
 
 let ua = null;           // JsSIP.UA
 let session = null;      // Current JsSIP.RTCSession
+const isRegister = false;
 
 function logger(msg) {
     console.log(`[OFFSCREEN] ${new Date().toLocaleString()} `, msg)
@@ -15,7 +16,7 @@ async function startUA() {
         sockets: [socket],
         uri: `sip:${credentials.username}@${credentials.domain}`,
         password: credentials.password,
-        register: true,
+        register: isRegister,
     };
     ua = new JsSIP.UA(configuration);
 
@@ -52,13 +53,15 @@ async function startUA() {
 }
 
 startUA();
-
+//TODO: ativar heartbeat/register caso esteja configurado pra receber chamadas
 // Heartbeat: envia ping periódico para manter o SW ativo e permitir recriação do offscreen se cair
-const HEARTBEAT_INTERVAL_MS = 20000; // 20s
-setInterval(() => {
-    chrome.runtime.sendMessage({type: 'heartbeat', ts: Date.now()}).catch(() => {
-    });
-}, HEARTBEAT_INTERVAL_MS);
+if (isRegister) {
+    const HEARTBEAT_INTERVAL_MS = 20000; // 20s
+    setInterval(() => {
+        chrome.runtime.sendMessage({type: 'heartbeat', ts: Date.now()}).catch(() => {
+        });
+    }, HEARTBEAT_INTERVAL_MS);
+}
 
 async function dial(phoneNumber) {
     logger('Autenticando...')
