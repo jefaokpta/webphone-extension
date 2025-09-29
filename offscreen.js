@@ -1,8 +1,9 @@
-const BACKEND_URL = credentials.pabxUrl;
 
 let ua = null;           // JsSIP.UA
 let session = null;      // Current JsSIP.RTCSession
 const isRegister = false;
+let token = null;
+let credential = null;
 
 function logger(msg) {
     console.log(`[OFFSCREEN] ${new Date().toLocaleString()} `, msg)
@@ -10,14 +11,13 @@ function logger(msg) {
     });
 }
 
-async function startUA(token) {
+function startUA() {
     logger('Iniciando JsSIP... Registrar: ' + isRegister)
-    logger('Token: ' + token)
-    const socket = new JsSIP.WebSocketInterface(`wss://${credentials.domain}:${credentials.port}/ws`);
+    const socket = new JsSIP.WebSocketInterface(`wss://${credential.domain}:${credential.port}/ws`);
     const configuration = {
         sockets: [socket],
-        uri: `sip:${credentials.username}@${credentials.domain}`,
-        password: credentials.password,
+        uri: `sip:${credential.peer}@${credential.domain}`,
+        password: credential.password,
         register: isRegister,
     };
     ua = new JsSIP.UA(configuration);
@@ -68,8 +68,8 @@ if (isRegister) {
 
 async function dial(phoneNumber) {
     logger('Autenticando...')
-    const callToken = await getCallToken(credentials.token);
-    const sipCall = `sip:${phoneNumber}@${credentials.domain}`;
+    const callToken = await getCallToken();
+    const sipCall = `sip:${phoneNumber}@${credential.domain}`;
     logger(`Chamando ${sipCall}`);
     const options = {
         mediaConstraints: {audio: true, video: false},
@@ -133,9 +133,9 @@ function tryAttachAudio(session) {
     // });
 }
 
-async function getCallToken(token) {
+async function getCallToken() {
     try {
-        const response = await fetch(`${BACKEND_URL}/auth/call-token`, {
+        const response = await fetch(`${credential.backendUrl}/auth/call-token`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -154,6 +154,14 @@ function startByJwt() {
     chrome.runtime.sendMessage({type: "jwt"})
 }
 
+function extractJwt(token) {
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+        throw new Error('JWT token inválido');
+    }
+    return JSON.parse(atob(parts[1]));
+}
+
 chrome.runtime.onMessage.addListener(async (message) => {
     switch (message.type) {
         case 'dial':
@@ -168,7 +176,9 @@ chrome.runtime.onMessage.addListener(async (message) => {
         case 'wakeup':
             break;
         case 'jwt-response':
-            startUA(message.jwt);
+            token = message.jwt;
+            credential = extractJwt(token);
+            startUA();
             break;
         default:
             logger(`Mensagem desconhecida: ${JSON.stringify(message)}`);
