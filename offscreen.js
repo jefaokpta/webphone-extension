@@ -10,7 +10,9 @@ function logger(msg) {
     });
 }
 
-async function startUA() {
+async function startUA(token) {
+    logger('Iniciando JsSIP... Registrar: ' + isRegister)
+    logger('Token: ' + token)
     const socket = new JsSIP.WebSocketInterface(`wss://${credentials.domain}:${credentials.port}/ws`);
     const configuration = {
         sockets: [socket],
@@ -52,9 +54,8 @@ async function startUA() {
     ua.start();
 }
 
-document.addEventListener("DOMContentLoaded", getStoredJwt);
-logger('Iniciando JsSIP... Registrar: ' + isRegister)
-startUA();
+startByJwt()
+
 //TODO: ativar heartbeat/register caso esteja configurado pra receber chamadas
 // Heartbeat: envia ping periódico para manter o SW ativo e permitir recriação do offscreen se cair
 if (isRegister) {
@@ -63,13 +64,6 @@ if (isRegister) {
         chrome.runtime.sendMessage({type: 'heartbeat', ts: Date.now()}).catch(() => {
         });
     }, HEARTBEAT_INTERVAL_MS);
-}
-
-async function getStoredJwt() {
-    setTimeout(async () => {
-        const {jwt} = await chrome.storage.sync.get(['jwt']);
-        logger('Carregando JWT ' + jwt)
-    }, 5000)
 }
 
 async function dial(phoneNumber) {
@@ -156,6 +150,10 @@ async function getCallToken(token) {
     }
 }
 
+function startByJwt() {
+    chrome.runtime.sendMessage({type: "jwt"})
+}
+
 chrome.runtime.onMessage.addListener(async (message) => {
     switch (message.type) {
         case 'dial':
@@ -168,6 +166,9 @@ chrome.runtime.onMessage.addListener(async (message) => {
             hangup();
             break;
         case 'wakeup':
+            break;
+        case 'jwt-response':
+            startUA(message.jwt);
             break;
         default:
             logger(`Mensagem desconhecida: ${JSON.stringify(message)}`);

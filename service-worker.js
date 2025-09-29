@@ -25,16 +25,22 @@ async function ensureOffscreenDocument() {
 // Ensure offscreen on startup/installation
 chrome.runtime.onInstalled.addListener(() => {
     ensureOffscreenDocument();
+    logger('onInstalled event')
 });
 chrome.runtime.onStartup?.addListener(() => {
     ensureOffscreenDocument();
+    logger('onStartup event')
 });
 
-chrome.runtime.onMessage.addListener(async (message) => {
+chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     // toda vez q popup abre e envia a mensagem 'wakeup' para o service worker criar o offscreen document e ficar pronto para receber comandos
     await ensureOffscreenDocument();
     if (message.type === 'wakeup') logger(`Recebida: ${JSON.stringify(message)}`);
     if (message.type === 'heartbeat') armHeartbeat();
+    if (message.type === 'jwt') {
+        const {jwt} = await chrome.storage.sync.get(['jwt']);
+        chrome.runtime.sendMessage({type: 'jwt-response', jwt});
+    }
 })
 
 // Heartbeat watchdog: se não receber ping do offscreen por X segundos, recria o offscreen.
